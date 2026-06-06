@@ -152,6 +152,7 @@ router.post(
       enableTunnel,
       enableFileManager,
       enableDocker,
+      enableProxmox,
       showTerminalInSidebar,
       showFileManagerInSidebar,
       showTunnelInSidebar,
@@ -163,6 +164,7 @@ router.post(
       quickActions,
       statsConfig,
       dockerConfig,
+      proxmoxConfig,
       terminalConfig,
       forceKeyboardInteractive,
       domain,
@@ -252,6 +254,7 @@ router.post(
         : null,
       enableFileManager: enableFileManager ? 1 : 0,
       enableDocker: enableDocker ? 1 : 0,
+      enableProxmox: enableProxmox ? 1 : 0,
       showTerminalInSidebar: showTerminalInSidebar ? 1 : 0,
       showFileManagerInSidebar: showFileManagerInSidebar ? 1 : 0,
       showTunnelInSidebar: showTunnelInSidebar ? 1 : 0,
@@ -267,6 +270,11 @@ router.post(
         ? typeof dockerConfig === "string"
           ? dockerConfig
           : JSON.stringify(dockerConfig)
+        : null,
+      proxmoxConfig: proxmoxConfig
+        ? typeof proxmoxConfig === "string"
+          ? proxmoxConfig
+          : JSON.stringify(proxmoxConfig)
         : null,
       terminalConfig: terminalConfig
         ? typeof terminalConfig === "string"
@@ -571,6 +579,7 @@ router.post(
         enableTunnel: false,
         enableFileManager: true,
         enableDocker: false,
+        enableProxmox: false,
         showTerminalInSidebar: true,
         showFileManagerInSidebar: false,
         showTunnelInSidebar: false,
@@ -690,6 +699,7 @@ router.put(
       enableTunnel,
       enableFileManager,
       enableDocker,
+      enableProxmox,
       showTerminalInSidebar,
       showFileManagerInSidebar,
       showTunnelInSidebar,
@@ -701,6 +711,7 @@ router.put(
       quickActions,
       statsConfig,
       dockerConfig,
+      proxmoxConfig,
       terminalConfig,
       forceKeyboardInteractive,
       domain,
@@ -787,6 +798,7 @@ router.put(
         : null,
       enableFileManager: enableFileManager ? 1 : 0,
       enableDocker: enableDocker ? 1 : 0,
+      enableProxmox: enableProxmox ? 1 : 0,
       showTerminalInSidebar: showTerminalInSidebar ? 1 : 0,
       showFileManagerInSidebar: showFileManagerInSidebar ? 1 : 0,
       showTunnelInSidebar: showTunnelInSidebar ? 1 : 0,
@@ -802,6 +814,11 @@ router.put(
         ? typeof dockerConfig === "string"
           ? dockerConfig
           : JSON.stringify(dockerConfig)
+        : null,
+      proxmoxConfig: proxmoxConfig
+        ? typeof proxmoxConfig === "string"
+          ? proxmoxConfig
+          : JSON.stringify(proxmoxConfig)
         : null,
       terminalConfig: terminalConfig
         ? typeof terminalConfig === "string"
@@ -1122,6 +1139,7 @@ router.get(
           quickActions: hosts.quickActions,
           notes: hosts.notes,
           enableDocker: hosts.enableDocker,
+          enableProxmox: hosts.enableProxmox,
           showTerminalInSidebar: hosts.showTerminalInSidebar,
           showFileManagerInSidebar: hosts.showFileManagerInSidebar,
           showTunnelInSidebar: hosts.showTunnelInSidebar,
@@ -1140,6 +1158,7 @@ router.get(
           guacamoleConfig: hosts.guacamoleConfig,
           macAddress: hosts.macAddress,
           dockerConfig: hosts.dockerConfig,
+          proxmoxConfig: hosts.proxmoxConfig,
           enableSsh: hosts.enableSsh,
           enableRdp: hosts.enableRdp,
           enableVnc: hosts.enableVnc,
@@ -1511,6 +1530,7 @@ router.get(
             enableTunnel: !!resolvedHost.enableTunnel,
             enableFileManager: !!resolvedHost.enableFileManager,
             enableDocker: !!resolvedHost.enableDocker,
+            enableProxmox: !!resolvedHost.enableProxmox,
             showTerminalInSidebar: !!resolvedHost.showTerminalInSidebar,
             showFileManagerInSidebar: !!resolvedHost.showFileManagerInSidebar,
             showTunnelInSidebar: !!resolvedHost.showTunnelInSidebar,
@@ -1532,6 +1552,9 @@ router.get(
               : null,
             dockerConfig: resolvedHost.dockerConfig
               ? JSON.parse(resolvedHost.dockerConfig as string)
+              : null,
+            proxmoxConfig: resolvedHost.proxmoxConfig
+              ? JSON.parse(resolvedHost.proxmoxConfig as string)
               : null,
             terminalConfig: resolvedHost.terminalConfig
               ? JSON.parse(resolvedHost.terminalConfig as string)
@@ -1654,6 +1677,7 @@ router.get(
               enableTunnel: !!resolvedHost.enableTunnel,
               enableFileManager: !!resolvedHost.enableFileManager,
               enableDocker: !!resolvedHost.enableDocker,
+              enableProxmox: !!resolvedHost.enableProxmox,
               showTerminalInSidebar: !!resolvedHost.showTerminalInSidebar,
               showFileManagerInSidebar: !!resolvedHost.showFileManagerInSidebar,
               showTunnelInSidebar: !!resolvedHost.showTunnelInSidebar,
@@ -1675,6 +1699,9 @@ router.get(
                 : null,
               dockerConfig: resolvedHost.dockerConfig
                 ? JSON.parse(resolvedHost.dockerConfig as string)
+                : null,
+              proxmoxConfig: resolvedHost.proxmoxConfig
+                ? JSON.parse(resolvedHost.proxmoxConfig as string)
                 : null,
               terminalConfig: resolvedHost.terminalConfig
                 ? JSON.parse(resolvedHost.terminalConfig as string)
@@ -2077,112 +2104,6 @@ registerHostFolderRoutes(router, {
 });
 
 registerHostBulkRoutes(router, authenticateJWT);
-
-/**
- * @openapi
- * /host/folders/{folderName}/hosts:
- *   delete:
- *     summary: Delete all hosts in a folder
- *     description: Deletes all hosts within a specific folder.
- *     tags:
- *       - SSH
- *     parameters:
- *       - in: path
- *         name: folderName
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: All hosts deleted successfully.
- *       400:
- *         description: Invalid folder name.
- *       500:
- *         description: Failed to delete hosts.
- */
-router.delete(
-  "/folders/:folderName/hosts",
-  authenticateJWT,
-  requireDataAccess,
-  async (req: Request, res: Response) => {
-    const userId = (req as AuthenticatedRequest).userId;
-    const folderName = decodeURIComponent(
-      Array.isArray(req.params.folderName)
-        ? req.params.folderName[0]
-        : req.params.folderName,
-    );
-
-    if (!folderName) {
-      return res.status(400).json({ error: "Folder name is required" });
-    }
-
-    try {
-      const hostsToDelete = await db
-        .select({ id: hosts.id })
-        .from(hosts)
-        .where(and(eq(hosts.userId, userId), eq(hosts.folder, folderName)));
-
-      if (hostsToDelete.length === 0) {
-        return res.json({ deletedCount: 0 });
-      }
-
-      const hostIds = hostsToDelete.map((h) => h.id);
-
-      for (const hostId of hostIds) {
-        await db
-          .delete(fileManagerRecent)
-          .where(eq(fileManagerRecent.hostId, hostId));
-        await db
-          .delete(fileManagerPinned)
-          .where(eq(fileManagerPinned.hostId, hostId));
-        await db
-          .delete(fileManagerShortcuts)
-          .where(eq(fileManagerShortcuts.hostId, hostId));
-        await db
-          .delete(transferRecent)
-          .where(
-            or(
-              eq(transferRecent.sourceHostId, hostId),
-              eq(transferRecent.destHostId, hostId),
-            ),
-          );
-        await db
-          .delete(commandHistory)
-          .where(eq(commandHistory.hostId, hostId));
-        await db
-          .delete(sshCredentialUsage)
-          .where(eq(sshCredentialUsage.hostId, hostId));
-        await db
-          .delete(recentActivity)
-          .where(eq(recentActivity.hostId, hostId));
-        await db.delete(hostAccess).where(eq(hostAccess.hostId, hostId));
-        await db
-          .delete(sessionRecordings)
-          .where(eq(sessionRecordings.hostId, hostId));
-      }
-
-      await db
-        .delete(hosts)
-        .where(and(eq(hosts.userId, userId), eq(hosts.folder, folderName)));
-
-      databaseLogger.success("All hosts in folder deleted", {
-        operation: "delete_folder_hosts",
-        userId,
-        folderName,
-        deletedCount: hostsToDelete.length,
-      });
-
-      res.json({ deletedCount: hostsToDelete.length });
-    } catch (error) {
-      sshLogger.error("Failed to delete hosts in folder", error, {
-        operation: "delete_folder_hosts",
-        userId,
-        folderName,
-      });
-      res.status(500).json({ error: "Failed to delete hosts in folder" });
-    }
-  },
-);
 
 registerHostAutostartRoutes(router, {
   authenticateJWT,

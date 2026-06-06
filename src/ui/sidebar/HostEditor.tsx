@@ -46,7 +46,11 @@ import {
   type HostFastScrollModifier,
   type HostProtocols,
 } from "./HostEditorData";
-import { HostDockerTab, HostFilesTab } from "./HostEditorFeatureTabs";
+import {
+  HostDockerTab,
+  HostProxmoxTab,
+  HostFilesTab,
+} from "./HostEditorFeatureTabs";
 import { HostEditorGeneralTab } from "./HostEditorGeneralTab";
 import {
   HostEditorRdpTab,
@@ -138,7 +142,21 @@ export function HostEditor({
       enableVnc: "vnc",
       enableTelnet: "telnet",
     };
-    if (!value && activeTab === tabForProto[proto]) onTabChange("general");
+    const sshGroupTabs = [
+      "ssh",
+      "terminal",
+      "tunnels",
+      "docker",
+      "files",
+      "stats",
+    ];
+    if (!value) {
+      if (proto === "enableSsh" && sshGroupTabs.includes(activeTab)) {
+        onTabChange("general");
+      } else if (activeTab === tabForProto[proto]) {
+        onTabChange("general");
+      }
+    }
     if (value && tabForProto[proto]) onTabChange(tabForProto[proto]);
   };
 
@@ -437,7 +455,11 @@ export function HostEditor({
                 </SettingRow>
               </div>
             </SectionCard>
+          </>
+        )}
 
+        {activeTab === "terminal" && (
+          <>
             <SectionCard
               title={t("hosts.terminalAppearance")}
               icon={<Palette className="size-3.5" />}
@@ -1216,6 +1238,10 @@ export function HostEditor({
 
         {activeTab === "docker" && (
           <HostDockerTab form={form} setField={setField} />
+        )}
+
+        {activeTab === "proxmox" && (
+          <HostProxmoxTab form={form} setField={setField} />
         )}
 
         {activeTab === "files" && (

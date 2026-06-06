@@ -90,6 +90,13 @@ export type Host = {
   defaultPath?: string;
 
   enableDocker: boolean;
+  enableProxmox: boolean;
+  proxmoxConfig?: {
+    defaultCredentialId: number | null;
+    windowsPatterns: string;
+    dockerPatterns: string;
+    preferredPrefixes: string;
+  } | null;
 
   statsConfig?: {
     statusCheckEnabled: boolean;
@@ -144,6 +151,9 @@ export type Credential = {
 export type HostFolder = {
   name: string;
   children: (Host | HostFolder)[];
+  path?: string;
+  color?: string;
+  icon?: string;
 };
 
 export type TabType =
